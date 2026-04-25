@@ -413,36 +413,39 @@ def run_web_server():
 
 # --- মেইন ফাংশন ---
 
+async def post_init(application):
+    """বট শুরু হওয়ার পরে scheduler চালু করে"""
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(expiry_check_job, "interval", hours=1, args=[application])
+    scheduler.add_job(expiry_warning_job, "interval", hours=6, args=[application])
+    scheduler.start()
+    logger.info("Scheduler চালু হয়েছে")
+
 def main():
     # ওয়েব সার্ভার আলাদা থ্রেডে চালু
     threading.Thread(target=run_web_server, daemon=True).start()
 
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    application = (
+        ApplicationBuilder()
+        .token(BOT_TOKEN)
+        .post_init(post_init)
+        .build()
+    )
 
-    # জব শিডিউলার শুরু
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(expiry_check_job, 'interval', hours=1, args=[application])
-    scheduler.add_job(expiry_warning_job, 'interval', hours=6, args=[application])
-    scheduler.start()
-
-    # কমান্ড হ্যান্ডলার রেজিস্ট্রেশন
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("packages", show_packages))
     application.add_handler(CommandHandler("verify", verify_payment))
     application.add_handler(CommandHandler("mystatus", my_status))
-    
-    # অ্যাডমিন কমান্ড
     application.add_handler(CommandHandler("addpackage", add_package))
     application.add_handler(CommandHandler("stats", stats))
-    
-    # বাটন হ্যান্ডলার
     application.add_handler(CallbackQueryHandler(show_packages, pattern="^view_packages$"))
     application.add_handler(CallbackQueryHandler(my_status, pattern="^my_status$"))
     application.add_handler(CallbackQueryHandler(package_detail, pattern="^pkg_"))
     application.add_handler(CallbackQueryHandler(admin_callback_handler, pattern="^adm_"))
 
-    print("বটটি সফলভাবে চালু হয়েছে...")
+    print("বটটি সফলভাবে চালু হয়েছে...")
     application.run_polling()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
+        
