@@ -444,8 +444,14 @@ def main():
     application.add_handler(CallbackQueryHandler(admin_callback_handler, pattern="^adm_"))
 
     print("বটটি সফলভাবে চালু হয়েছে...")
-    application.run_polling()
+    import asyncio
+
+async def main():
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling()
+    await application.stop()
 
 if __name__ == "__main__":
-    main()
-        
+    asyncio.run(main())
+    
