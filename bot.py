@@ -393,9 +393,30 @@ async def expiry_warning_job(context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_message(user_id, f"⚠️ {warn_msg}")
             except: pass
 
+# --- ওয়েব সার্ভার (Render এর জন্য) ---
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b'Bot is running!')
+    def log_message(self, format, *args):
+        pass
+
+def run_web_server():
+    port = int(os.environ.get('PORT', 8080))
+    server = HTTPServer(('0.0.0.0', port), HealthHandler)
+    logger.info(f"ওয়েব সার্ভার চালু port {port}")
+    server.serve_forever()
+
 # --- মেইন ফাংশন ---
 
 def main():
+    # ওয়েব সার্ভার আলাদা থ্রেডে চালু
+    threading.Thread(target=run_web_server, daemon=True).start()
+
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     # জব শিডিউলার শুরু
